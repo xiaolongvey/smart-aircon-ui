@@ -88,9 +88,18 @@ const ScheduleForm = () => {
           // Play error sound
           audioService.playErrorSound()
           const conflict = result.conflicts[0]
+          
+          // Convert conflict times to 12-hour format
+          const formatConflictTime = (time24) => {
+            const [hours, minutes] = time24.split(':').map(Number)
+            const period = hours >= 12 ? 'PM' : 'AM'
+            const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+            return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+          }
+          
           setSaveStatus({ 
             type: 'error', 
-            message: `Time slot conflicts with existing schedule by ${conflict.userName} (${conflict.startTime}-${conflict.endTime}). Please choose a different time.`
+            message: `Time slot conflicts with existing schedule by ${conflict.userName} (${formatConflictTime(conflict.startTime)}-${formatConflictTime(conflict.endTime)}). Please choose a different time.`
           })
         } else {
           // Play error sound
@@ -198,6 +207,25 @@ const ScheduleForm = () => {
               }`}
               required
             />
+            {formData.startTime && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                <span>
+                  {(() => {
+                    const [hours, minutes] = formData.startTime.split(':').map(Number)
+                    const period = hours >= 12 ? 'PM' : 'AM'
+                    const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+                  })()}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  formData.isToday 
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                    : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                }`}>
+                  {formData.isToday ? 'Today' : 'Tomorrow'}
+                </span>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
@@ -215,6 +243,25 @@ const ScheduleForm = () => {
               }`}
               required
             />
+            {formData.endTime && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                <span>
+                  {(() => {
+                    const [hours, minutes] = formData.endTime.split(':').map(Number)
+                    const period = hours >= 12 ? 'PM' : 'AM'
+                    const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+                  })()}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  formData.isToday 
+                    ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                    : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                }`}>
+                  {formData.isToday ? 'Today' : 'Tomorrow'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

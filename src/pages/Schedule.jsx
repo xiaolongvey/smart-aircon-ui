@@ -49,6 +49,51 @@ const Schedule = () => {
                     }
                   }
                   
+                  // Convert 24-hour time to 12-hour format with AM/PM
+                  const formatTime = (time24) => {
+                    const [hours, minutes] = time24.split(':').map(Number)
+                    const period = hours >= 12 ? 'PM' : 'AM'
+                    const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+                  }
+                  
+                  // Determine if schedule is for today or tomorrow based on common sense
+                  const getScheduleContext = (schedule) => {
+                    const now = new Date()
+                    const currentHour = now.getHours()
+                    const scheduleHour = parseInt(schedule.startTime.split(':')[0])
+                    
+                    // If schedule date is explicitly set to tomorrow
+                    if (schedule.scheduleDate) {
+                      const scheduleDate = new Date(schedule.scheduleDate)
+                      const today = new Date()
+                      today.setHours(0, 0, 0, 0)
+                      scheduleDate.setHours(0, 0, 0, 0)
+                      
+                      if (scheduleDate.getTime() > today.getTime()) {
+                        return 'Tomorrow'
+                      }
+                    }
+                    
+                    // Common sense logic: if it's late at night and schedule is early morning, it's probably tomorrow
+                    if (currentHour >= 20 && scheduleHour <= 6) {
+                      return 'Tomorrow'
+                    }
+                    
+                    // If it's early morning and schedule is late night, it's probably today
+                    if (currentHour <= 6 && scheduleHour >= 20) {
+                      return 'Today'
+                    }
+                    
+                    // If schedule hour is much earlier than current hour, it's probably tomorrow
+                    if (scheduleHour < currentHour - 2) {
+                      return 'Tomorrow'
+                    }
+                    
+                    // Default to today
+                    return 'Today'
+                  }
+                  
                   return (
                     <div key={schedule.id} className="flex items-center justify-between p-3 bg-teal-50 dark:bg-gray-900 rounded-lg border border-teal-200 dark:border-gray-700">
                       <div className="flex items-center gap-3">
@@ -58,7 +103,16 @@ const Schedule = () => {
                           </svg>
                         </div>
                         <div>
-                          <h3 className="font-semibold text-slate-800 dark:text-white">{schedule.startTime} - {schedule.endTime}</h3>
+                          <h3 className="font-semibold text-slate-800 dark:text-white">
+                            {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                            <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                              getScheduleContext(schedule) === 'Tomorrow' 
+                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' 
+                                : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                            }`}>
+                              {getScheduleContext(schedule)}
+                            </span>
+                          </h3>
                           <div className="text-xs text-slate-600 dark:text-gray-300 space-y-1">
                             <div className="flex items-center">
                               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
