@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape" />
+    <meta name="screen-orientation" content="landscape" />
     <title>chEElax - Smart Air Conditioning Control</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,5 +13,22 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Lock orientation to landscape
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+          console.log('Orientation lock failed:', err);
+        });
+      }
+      
+      // Prevent rotation on mobile
+      window.addEventListener('orientationchange', function() {
+        if (window.orientation === 0 || window.orientation === 180) {
+          document.body.style.transform = 'rotate(90deg)';
+        } else {
+          document.body.style.transform = 'rotate(0deg)';
+        }
+      });
+    </script>
   </body>
 </html>

@@ -1,0 +1,132 @@
+// API service for shared schedules
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api'
+
+// Generate a simple user ID based on device/browser
+const getUserId = () => {
+  let userId = localStorage.getItem('userId')
+  if (!userId) {
+    userId = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now()
+    localStorage.setItem('userId', userId)
+  }
+  return userId
+}
+
+// Get user info
+const getUserInfo = () => {
+  const userId = getUserId()
+  const userName = localStorage.getItem('userName') || `User ${userId.slice(-4)}`
+  return { userId, userName }
+}
+
+// Set user name
+const setUserName = (name) => {
+  localStorage.setItem('userName', name)
+}
+
+// Mock schedules storage (in real app, this would be a database)
+let schedules = [
+  {
+    id: 1,
+    userId: 'user_demo',
+    userName: 'Demo User',
+    startTime: '08:00',
+    endTime: '12:00',
+    comfortLevel: 22,
+    createdAt: new Date().toISOString(),
+    isActive: true
+  }
+]
+
+// API functions
+export const scheduleAPI = {
+  // Get all schedules
+  async getAllSchedules() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/schedules`)
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Failed to fetch schedules:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  // Create a new schedule
+  async createSchedule(scheduleData) {
+    try {
+      const { userId, userName } = getUserInfo()
+      const response = await fetch(`${API_BASE_URL}/schedules`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          userName,
+          ...scheduleData
+        })
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Failed to create schedule:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  // Update a schedule
+  async updateSchedule(id, updateData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/schedules/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Failed to update schedule:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  // Delete a schedule
+  async deleteSchedule(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/schedules/${id}`, {
+        method: 'DELETE'
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Failed to delete schedule:', error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  // Get user info
+  getUserInfo,
+  setUserName
+}
+
+// Real-time updates simulation (in real app, this would be WebSocket)
+export const realtimeAPI = {
+  // Subscribe to schedule updates
+  subscribeToUpdates(callback) {
+    // Poll for updates every 5 seconds
+    const interval = setInterval(async () => {
+      try {
+        const response = await scheduleAPI.getAllSchedules()
+        if (response.success) {
+          callback(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch updates:', error)
+      }
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }
+}

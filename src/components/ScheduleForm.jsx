@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePower } from '../contexts/PowerContext'
+import { useSchedule } from '../contexts/ScheduleContext'
 
 const ScheduleForm = () => {
   const { powerOn } = usePower()
+  const { createSchedule, userInfo, updateUserName } = useSchedule()
   const [formData, setFormData] = useState({
-    userName: '',
+    userName: userInfo.userName,
     startTime: '',
     endTime: '',
     comfortLevel: 22
   })
   const [saveStatus, setSaveStatus] = useState(null)
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleInputChange = (field, value) => {
@@ -18,49 +21,64 @@ const ScheduleForm = () => {
       ...prev,
       [field]: value
     }))
+    
+    // Update user name in context when changed
+    if (field === 'userName') {
+      updateUserName(value)
+    }
   }
 
-  // days and enable toggles removed for simplified form
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!powerOn) return
     
-    console.log('Schedule submitted:', formData)
+    setLoading(true)
+    setSaveStatus(null)
+    
     try {
-      const schedules = JSON.parse(localStorage.getItem('schedules') || '[]')
-      const newSchedule = { id: Date.now(), ...formData }
-      const next = [newSchedule, ...schedules].slice(0, 10)
-      localStorage.setItem('schedules', JSON.stringify(next))
-      setSaveStatus({ type: 'success', message: 'Schedule saved' })
-      navigate('/')
+      const result = await createSchedule(formData)
+      if (result.success) {
+        setSaveStatus({ type: 'success', message: 'Schedule created successfully!' })
+        // Reset form
+        setFormData(prev => ({
+          ...prev,
+          startTime: '',
+          endTime: '',
+          comfortLevel: 22
+        }))
+        // Navigate to home after a short delay
+        setTimeout(() => navigate('/'), 1500)
+      } else {
+        setSaveStatus({ type: 'error', message: result.error || 'Failed to create schedule' })
+      }
     } catch (err) {
-      console.error('Failed to save schedule', err)
-      setSaveStatus({ type: 'error', message: 'Failed to save schedule' })
+      console.error('Failed to create schedule', err)
+      setSaveStatus({ type: 'error', message: 'Failed to create schedule' })
+    } finally {
+      setLoading(false)
     }
-    // Here you would typically send the data to your backend
   }
 
   return (
-    <div className="card p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-aircon-gray-800 mb-6 text-center tracking-widest">
+    <div className="card p-6 max-w-2xl mx-auto dark:bg-black dark:border-gray-800">
+      <h2 className="text-2xl font-bold text-aircon-gray-800 dark:text-white mb-6 text-center tracking-widest">
         SET SCHEDULE
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {saveStatus && (
-          <div className={`p-3 rounded-lg text-sm ${saveStatus.type === 'success' ? 'bg-teal-50 text-teal-700' : 'bg-red-50 text-red-700'}`}>
+          <div className={`p-3 rounded-lg text-sm ${saveStatus.type === 'success' ? 'bg-teal-50 dark:bg-teal-900 text-teal-700 dark:text-teal-200' : 'bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-200'}`}>
             {saveStatus.message}
           </div>
         )}
         {!powerOn && (
-          <div className="p-3 rounded-lg text-sm bg-gray-50 text-gray-500 text-center">
+          <div className="p-3 rounded-lg text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-center">
             System is in standby mode. Turn on the system to create schedules.
           </div>
         )}
         {/* User Name */}
         <div>
-          <label className="block text-sm font-medium text-aircon-gray-700 mb-2">
+          <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
             User Name (optional)
           </label>
           <input
@@ -69,10 +87,10 @@ const ScheduleForm = () => {
             onChange={(e) => handleInputChange('userName', e.target.value)}
             placeholder="Enter your name"
             disabled={!powerOn}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-gray-900 dark:text-white ${
               powerOn 
-                ? 'border-gray-300 focus:ring-teal-500' 
-                : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'border-gray-300 dark:border-gray-600 focus:ring-teal-500' 
+                : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
             }`}
           />
         </div>
@@ -80,7 +98,7 @@ const ScheduleForm = () => {
         {/* Time Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-aircon-gray-700 mb-2">
+            <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
               Start Time
             </label>
             <input
@@ -88,16 +106,16 @@ const ScheduleForm = () => {
               value={formData.startTime}
               onChange={(e) => handleInputChange('startTime', e.target.value)}
               disabled={!powerOn}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-gray-900 dark:text-white ${
                 powerOn 
-                  ? 'border-gray-300 focus:ring-teal-500' 
-                  : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                  ? 'border-gray-300 dark:border-gray-600 focus:ring-teal-500' 
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               }`}
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-aircon-gray-700 mb-2">
+            <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
               End Time
             </label>
             <input
@@ -105,10 +123,10 @@ const ScheduleForm = () => {
               value={formData.endTime}
               onChange={(e) => handleInputChange('endTime', e.target.value)}
               disabled={!powerOn}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-gray-900 dark:text-white ${
                 powerOn 
-                  ? 'border-gray-300 focus:ring-teal-500' 
-                  : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                  ? 'border-gray-300 dark:border-gray-600 focus:ring-teal-500' 
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
               }`}
               required
             />
@@ -117,7 +135,7 @@ const ScheduleForm = () => {
 
         {/* Comfort Level (slider) */}
         <div>
-          <label className="block text-sm font-medium text-aircon-gray-700 mb-2">
+          <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
             Comfort Level: {formData.comfortLevel}°C
           </label>
           <div className="relative">
@@ -130,11 +148,11 @@ const ScheduleForm = () => {
               disabled={!powerOn}
               className={`w-full h-2 rounded-lg appearance-none slider ${
                 powerOn 
-                  ? 'bg-gray-200 cursor-pointer' 
-                  : 'bg-gray-100 cursor-not-allowed'
+                  ? 'bg-gray-200 dark:bg-gray-700 cursor-pointer' 
+                  : 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
               }`}
             />
-            <div className="flex justify-between text-xs text-aircon-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-aircon-gray-500 dark:text-gray-400 mt-1">
               <span>16°C</span>
               <span>30°C</span>
             </div>
@@ -145,14 +163,14 @@ const ScheduleForm = () => {
         <div className="pt-4">
           <button
             type="submit"
-            disabled={!powerOn}
+            disabled={!powerOn || loading}
             className={`w-full font-medium px-6 py-3 rounded-lg transition-colors duration-200 ${
-              powerOn 
+              powerOn && !loading
                 ? 'bg-teal-600 hover:bg-teal-700 text-white cursor-pointer' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            SAVE SCHEDULE
+            {loading ? 'CREATING SCHEDULE...' : 'SAVE SCHEDULE'}
           </button>
         </div>
       </form>

@@ -2,50 +2,22 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { usePower } from '../contexts/PowerContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useSchedule } from '../contexts/ScheduleContext'
 import TemperatureCard from '../components/TemperatureCard'
 
 const Home = () => {
   const { powerOn } = usePower()
   const { settings } = useSettings()
-  const [latestSchedule, setLatestSchedule] = useState(null)
-  const [allSchedules, setAllSchedules] = useState([])
+  const { schedules, deleteSchedule, loading, error } = useSchedule()
   const [phNow, setPhNow] = useState(new Date())
 
-  const toMinutes = (hhmm) => {
-    if (!hhmm) return -1
-    const [h, m] = hhmm.split(':').map(Number)
-    return h * 60 + m
-  }
-
-  const handleDeleteSchedule = (id) => {
+  const handleDeleteSchedule = async (id) => {
     try {
-      const toDelete = allSchedules.find(s => s.id === id)
-      const next = allSchedules.filter(s => s.id !== id)
-        .sort((a,b) => toMinutes(a.startTime) - toMinutes(b.startTime))
-      localStorage.setItem('schedules', JSON.stringify(next))
-      if (toDelete) {
-        const hist = JSON.parse(localStorage.getItem('history') || '[]')
-        const entry = { type: 'deleted', at: Date.now(), schedule: toDelete }
-        localStorage.setItem('history', JSON.stringify([entry, ...hist].slice(0, 100)))
-      }
-      setAllSchedules(next)
-      setLatestSchedule(next[0] || null)
+      await deleteSchedule(id)
     } catch (err) {
       console.error('Failed to delete schedule', err)
     }
   }
-
-  useEffect(() => {
-    try {
-      const schedules = JSON.parse(localStorage.getItem('schedules') || '[]')
-        .sort((a,b) => toMinutes(a.startTime) - toMinutes(b.startTime))
-      setLatestSchedule(schedules[0] || null)
-      setAllSchedules(schedules)
-    } catch {
-      setLatestSchedule(null)
-      setAllSchedules([])
-    }
-  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => setPhNow(new Date()), 1000)
@@ -118,16 +90,27 @@ const Home = () => {
 
           {/* All Schedules Grid */}
           <div className="card p-4 dark:bg-black dark:border-gray-800">
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-3 tracking-widest">Schedules</h2>
-            {allSchedules?.length === 0 ? (
-              <div className="text-slate-500 dark:text-gray-300 text-sm">No schedules yet.</div>
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-3 tracking-widest">Shared Schedules</h2>
+            {loading ? (
+              <div className="text-slate-500 dark:text-gray-300 text-sm">Loading schedules...</div>
+            ) : error ? (
+              <div className="text-red-500 text-sm">Error: {error}</div>
+            ) : schedules?.length === 0 ? (
+              <div className="text-slate-500 dark:text-gray-300 text-sm">No schedules yet. Create one to get started!</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {allSchedules.map(s => (
+                {schedules.map(s => (
                   <div key={s.id} className="p-3 rounded-lg bg-teal-50 dark:bg-gray-900 relative">
-                    <div className="text-teal-600 dark:text-teal-300 text-xs uppercase tracking-widest">Next Schedule</div>
+                    <div className="text-teal-600 dark:text-teal-300 text-xs uppercase tracking-widest">Schedule</div>
                     <div className="text-slate-800 dark:text-white text-lg font-semibold mt-1">{s.startTime} - {s.endTime}</div>
-                    {s.userName && <div className="text-slate-600 dark:text-gray-300 text-xs mt-1">for {s.userName}</div>}
+                    {s.userName && (
+                      <div className="text-slate-600 dark:text-gray-300 text-xs mt-1 flex items-center">
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        by {s.userName}
+                      </div>
+                    )}
                     {s.comfortLevel && (
                       <div className="text-teal-700 dark:text-teal-300 text-sm font-medium mt-2 flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

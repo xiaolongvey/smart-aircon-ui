@@ -11,7 +11,7 @@ export const usePower = () => {
 }
 
 export const PowerProvider = ({ children }) => {
-  const [powerOn, setPowerOn] = useState(true)
+  const [powerOn, setPowerOn] = useState(false)
 
   const togglePower = () => {
     setPowerOn(!powerOn)
