@@ -5,21 +5,23 @@ const getApiBaseUrl = () => {
     return process.env.REACT_APP_API_URL
   }
   
-  // For development, try to connect to the same host as the frontend
   const protocol = window.location.protocol
   const hostname = window.location.hostname
-  const port = window.location.port || '3001'
   
-  // If running on same host, use the same port
+  // If running on localhost, use localhost
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//${hostname}:3001/api`
+    return `${protocol}//localhost:3001/api`
   }
   
-  // For other devices, try common server ports
+  // For network access, try the current hostname with port 3001
   return `${protocol}//${hostname}:3001/api`
 }
 
 const API_BASE_URL = getApiBaseUrl()
+
+// Debug logging
+console.log('🌐 API Base URL:', API_BASE_URL)
+console.log('📍 Current location:', window.location.href)
 
 // Generate a simple user ID based on device/browser
 const getUserId = () => {

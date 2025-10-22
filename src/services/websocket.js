@@ -24,14 +24,15 @@ class WebSocketService {
       const hostname = window.location.hostname
       
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return `${protocol}//${hostname}:3001`
+        return `${protocol}//localhost:3001`
       }
       
-      // For other devices, use the same hostname with port 3001
+      // For network access, use the current hostname with port 3001
       return `${protocol}//${hostname}:3001`
     }
     
     const serverUrl = getServerUrl()
+    console.log('🔌 WebSocket connecting to:', serverUrl)
     
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
