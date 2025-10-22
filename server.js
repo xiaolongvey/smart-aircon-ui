@@ -23,6 +23,8 @@ let schedules = [
     startTime: '08:00',
     endTime: '12:00',
     comfortLevel: 22,
+    scheduleDate: new Date().toISOString().split('T')[0],
+    isToday: true,
     createdAt: new Date().toISOString(),
     isActive: true
   }
@@ -39,7 +41,7 @@ app.get('/api/schedules', (req, res) => {
 
 app.post('/api/schedules', (req, res) => {
   try {
-    const { userId, userName, startTime, endTime, comfortLevel } = req.body
+    const { userId, userName, startTime, endTime, comfortLevel, scheduleDate, isToday } = req.body
     
     const newSchedule = {
       id: Date.now(),
@@ -48,6 +50,8 @@ app.post('/api/schedules', (req, res) => {
       startTime,
       endTime,
       comfortLevel: comfortLevel || 22,
+      scheduleDate: scheduleDate || new Date().toISOString().split('T')[0],
+      isToday: isToday !== undefined ? isToday : true,
       createdAt: new Date().toISOString(),
       isActive: true
     }

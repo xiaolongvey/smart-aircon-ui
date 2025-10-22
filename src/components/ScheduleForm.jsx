@@ -10,17 +10,45 @@ const ScheduleForm = () => {
     userName: userInfo.userName,
     startTime: '',
     endTime: '',
-    comfortLevel: 22
+    comfortLevel: 22,
+    scheduleDate: '',
+    isToday: true
   })
   const [saveStatus, setSaveStatus] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [field]: value
+      }
+      
+      // Smart date logic: if time is in the past, schedule for tomorrow
+      if (field === 'startTime' && value) {
+        const now = new Date()
+        const currentHour = now.getHours()
+        const currentMinute = now.getMinutes()
+        const [scheduleHour, scheduleMinute] = value.split(':').map(Number)
+        
+        // If scheduled time is earlier than current time, set for tomorrow
+        const isPastTime = scheduleHour < currentHour || 
+          (scheduleHour === currentHour && scheduleMinute <= currentMinute)
+        
+        if (isPastTime) {
+          const tomorrow = new Date()
+          tomorrow.setDate(tomorrow.getDate() + 1)
+          newData.scheduleDate = tomorrow.toISOString().split('T')[0]
+          newData.isToday = false
+        } else {
+          newData.scheduleDate = now.toISOString().split('T')[0]
+          newData.isToday = true
+        }
+      }
+      
+      return newData
+    })
     
     // Update user name in context when changed
     if (field === 'userName') {
@@ -44,7 +72,9 @@ const ScheduleForm = () => {
           ...prev,
           startTime: '',
           endTime: '',
-          comfortLevel: 22
+          comfortLevel: 22,
+          scheduleDate: '',
+          isToday: true
         }))
         // Navigate to home after a short delay
         setTimeout(() => navigate('/'), 1500)
@@ -93,6 +123,44 @@ const ScheduleForm = () => {
                 : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
             }`}
           />
+        </div>
+
+        {/* Date Selection */}
+        <div>
+          <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
+            Schedule Date
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="date"
+              value={formData.scheduleDate}
+              onChange={(e) => handleInputChange('scheduleDate', e.target.value)}
+              disabled={!powerOn}
+              className={`px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-gray-900 dark:text-white ${
+                powerOn 
+                  ? 'border-gray-300 dark:border-gray-600 focus:ring-teal-500' 
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+              }`}
+              required
+            />
+            {formData.startTime && (
+              <div className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                formData.isToday 
+                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                  : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+              }`}>
+                {formData.isToday ? '📅 Today' : '📅 Tomorrow'}
+              </div>
+            )}
+          </div>
+          {formData.startTime && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {formData.isToday 
+                ? 'Schedule will run today' 
+                : 'Time is in the past, scheduled for tomorrow'
+              }
+            </p>
+          )}
         </div>
 
         {/* Time Settings */}
