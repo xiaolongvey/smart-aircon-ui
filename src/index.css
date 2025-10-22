@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Archivo', system-ui, sans-serif;
+    background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%);
+    min-height: 100vh;
+  }
+  
+  .dark body {
+    background: #000; /* pure black */
+    color: #e5e7eb; /* light gray text for readability */
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Archivo Black', 'Archivo', system-ui, sans-serif;
+    color: inherit;
+  }
+
+  /* Ensure headings are bright in dark mode */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #ffffff;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white dark:bg-black rounded-xl shadow-lg border border-gray-100 dark:border-gray-800;
+  }
+  
+  .btn-primary {
+    @apply bg-aircon-blue-600 hover:bg-aircon-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-aircon-gray-100 hover:bg-aircon-gray-200 dark:bg-[#111] dark:hover:bg-[#1a1a1a] text-aircon-gray-700 dark:text-gray-200 font-medium px-6 py-3 rounded-lg transition-colors duration-200;
+  }
+  
+  .nav-link {
+    @apply text-aircon-gray-600 hover:text-teal-600 dark:text-white dark:hover:text-teal-200 font-medium tracking-widest transition-colors duration-200;
+  }
+  
+  .nav-link.active {
+    @apply text-teal-600 dark:text-teal-200;
+  }
+}
+
+
+
+
