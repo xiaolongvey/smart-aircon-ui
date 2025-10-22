@@ -1,29 +1,10 @@
-// API service for shared schedules
-const getApiBaseUrl = () => {
-  // Try to detect the server URL automatically
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL
-  }
-  
-  const protocol = window.location.protocol
-  const hostname = window.location.hostname
-  
-  // If running on localhost, use localhost
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//localhost:3001/api`
-  }
-  
-  // For network access, try the current hostname with port 3001
-  return `${protocol}//${hostname}:3001/api`
-}
-
-const API_BASE_URL = getApiBaseUrl()
+// API service for shared schedules - localhost only
+const API_BASE_URL = 'http://localhost:3001/api'
 
 // Debug logging
 console.log('🌐 API Base URL:', API_BASE_URL)
 console.log('📍 Current location:', window.location.href)
-console.log('🔍 Hostname:', window.location.hostname)
-console.log('🔍 Protocol:', window.location.protocol)
+console.log('✅ Localhost configuration active')
 
 // Generate a simple user ID based on device/browser
 const getUserId = () => {

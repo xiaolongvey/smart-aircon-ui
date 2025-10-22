@@ -1,0 +1,30 @@
+{
+  "name": "realtime-scheduling-app",
+  "version": "1.0.0",
+  "description": "Real-time scheduling app with Node.js, Express, and Socket.IO",
+  "main": "realtime-server.js",
+  "scripts": {
+    "start": "node realtime-server.js",
+    "dev": "nodemon realtime-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "realtime",
+    "scheduling",
+    "socket.io",
+    "express",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

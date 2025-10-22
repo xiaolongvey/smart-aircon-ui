@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Scheduling App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+            transition: background 0.3s;
+        }
+        
+        .status-dot.connected {
+            background: #2ed573;
+        }
+        
+        .room-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .room-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .room-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .room-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .current-room {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .schedule-section {
+            padding: 20px;
+        }
+        
+        .schedule-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .schedules-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .schedule-item {
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .schedule-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-item.new {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        .schedule-item.updated {
+            animation: pulse 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .schedule-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .schedule-datetime {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .schedule-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+            border-radius: 8px;
+        }
+        
+        .btn-edit {
+            background: #ffa502;
+        }
+        
+        .btn-delete {
+            background: #ff4757;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .connection-error {
+            background: #ff4757;
+            color: white;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .room-input {
+                flex-direction: column;
+            }
+            
+            .schedule-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Real-time Scheduler</h1>
+            <div class="status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+        
+        <div id="connectionError" class="connection-error hidden">
+            Unable to connect to server. Please check your connection.
+        </div>
+        
+        <div class="room-section">
+            <div class="room-input">
+                <input type="text" id="roomInput" placeholder="Enter Room ID (e.g., user123)" maxlength="50">
+                <button class="btn" id="joinBtn" onclick="joinRoom()">Join Room</button>
+            </div>
+            <div id="currentRoom" class="current-room hidden">
+                Connected to room: <span id="roomName"></span>
+            </div>
+        </div>
+        
+        <div class="schedule-section">
+            <div class="schedule-form">
+                <h3>Create New Schedule</h3>
+                <div class="form-group">
+                    <label for="scheduleTitle">Title</label>
+                    <input type="text" id="scheduleTitle" placeholder="Enter schedule title" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="scheduleDatetime">Date & Time</label>
+                    <input type="datetime-local" id="scheduleDatetime">
+                </div>
+                <button class="btn" id="createBtn" onclick="createSchedule()" disabled>Create Schedule</button>
+            </div>
+            
+            <h3>Schedules</h3>
+            <div id="schedulesList" class="schedules-list">
+                <div class="empty-state">
+                    <h3>No schedules yet</h3>
+                    <p>Join a room and create your first schedule!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentRoom = null;
+        let schedules = [];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSocket();
+            setupEventListeners();
+            setDefaultDateTime();
+        });
+        
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                updateStatus('Connected', true);
+                hideConnectionError();
+            });
+            
+            socket.on('disconnect', () => {
+                updateStatus('Disconnected', false);
+                showConnectionError();
+            });
+            
+            socket.on('error', (data) => {
+                alert('Error: ' + data.message);
+            });
+            
+            socket.on('schedules:init', (data) => {
+                schedules = data.schedules;
+                renderSchedules();
+            });
+            
+            socket.on('schedule:created', (data) => {
+                schedules.push(data.schedule);
+                renderSchedules();
+                highlightSchedule(data.schedule.id, 'new');
+            });
+            
+            socket.on('schedule:updated', (data) => {
+                const index = schedules.findIndex(s => s.id === data.schedule.id);
+                if (index !== -1) {
+                    schedules[index] = data.schedule;
+                    renderSchedules();
+                    highlightSchedule(data.schedule.id, 'updated');
+                }
+            });
+            
+            socket.on('schedule:deleted', (data) => {
+                schedules = schedules.filter(s => s.id !== data.scheduleId);
+                renderSchedules();
+            });
+        }
+        
+        function setupEventListeners() {
+            // Enter key to join room
+            document.getElementById('roomInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    joinRoom();
+                }
+            });
+            
+            // Enter key to create schedule
+            document.getElementById('scheduleTitle').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    createSchedule();
+                }
+            });
+        }
+        
+        function setDefaultDateTime() {
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('scheduleDatetime').value = localDateTime;
+        }
+        
+        function joinRoom() {
+            const roomId = document.getElementById('roomInput').value.trim();
+            if (!roomId) {
+                alert('Please enter a room ID');
+                return;
+            }
+            
+            currentRoom = roomId;
+            socket.emit('join', { roomId });
+            
+            document.getElementById('roomName').textContent = roomId;
+            document.getElementById('currentRoom').classList.remove('hidden');
+            document.getElementById('createBtn').disabled = false;
+            
+            // Clear form
+            document.getElementById('roomInput').value = '';
+        }
+        
+        function createSchedule() {
+            if (!currentRoom) {
+                alert('Please join a room first');
+                return;
+            }
+            
+            const title = document.getElementById('scheduleTitle').value.trim();
+            const datetime = document.getElementById('scheduleDatetime').value;
+            
+            if (!title || !datetime) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            socket.emit('schedule:create', {
+                roomId: currentRoom,
+                title,
+                datetime
+            });
+            
+            // Clear form
+            document.getElementById('scheduleTitle').value = '';
+            setDefaultDateTime();
+        }
+        
+        function updateSchedule(scheduleId, newTitle, newDatetime) {
+            socket.emit('schedule:update', {
+                roomId: currentRoom,
+                scheduleId,
+                updates: {
+                    title: newTitle,
+                    datetime: newDatetime
+                }
+            });
+        }
+        
+        function deleteSchedule(scheduleId) {
+            if (confirm('Are you sure you want to delete this schedule?')) {
+                fetch(`/api/schedules/${currentRoom}/${scheduleId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Error deleting schedule: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting schedule');
+                });
+            }
+        }
+        
+        function renderSchedules() {
+            const container = document.getElementById('schedulesList');
+            
+            if (schedules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No schedules yet</h3>
+                        <p>Create your first schedule!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = schedules.map(schedule => {
+                const scheduleDate = new Date(schedule.datetime);
+                const formattedDate = scheduleDate.toLocaleDateString();
+                const formattedTime = scheduleDate.toLocaleTimeString();
+                
+                return `
+                    <div class="schedule-item" id="schedule-${schedule.id}">
+                        <div class="schedule-title">${escapeHtml(schedule.title)}</div>
+                        <div class="schedule-datetime">📅 ${formattedDate} at ${formattedTime}</div>
+                        <div class="schedule-actions">
+                            <button class="btn btn-small btn-edit" onclick="editSchedule('${schedule.id}')">Edit</button>
+                            <button class="btn btn-small btn-delete" onclick="deleteSchedule('${schedule.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function editSchedule(scheduleId) {
+            const schedule = schedules.find(s => s.id === scheduleId);
+            if (!schedule) return;
+            
+            const newTitle = prompt('Enter new title:', schedule.title);
+            if (newTitle === null) return;
+            
+            const newDatetime = prompt('Enter new date and time (YYYY-MM-DDTHH:MM):', schedule.datetime);
+            if (newDatetime === null) return;
+            
+            if (newTitle.trim() && newDatetime.trim()) {
+                updateSchedule(scheduleId, newTitle.trim(), newDatetime.trim());
+            }
+        }
+        
+        function highlightSchedule(scheduleId, type) {
+            const element = document.getElementById(`schedule-${scheduleId}`);
+            if (element) {
+                element.classList.add(type);
+                setTimeout(() => {
+                    element.classList.remove(type);
+                }, 1000);
+            }
+        }
+        
+        function updateStatus(text, connected) {
+            document.getElementById('statusText').textContent = text;
+            const dot = document.getElementById('statusDot');
+            if (connected) {
+                dot.classList.add('connected');
+            } else {
+                dot.classList.remove('connected');
+            }
+        }
+        
+        function showConnectionError() {
+            document.getElementById('connectionError').classList.remove('hidden');
+        }
+        
+        function hideConnectionError() {
+            document.getElementById('connectionError').classList.add('hidden');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

@@ -18,11 +18,11 @@ const io = new Server(server, {
 })
 
 const PORT = process.env.PORT || 3001
-const HOST = process.env.HOST || '0.0.0.0' // Listen on all network interfaces
+const HOST = process.env.HOST || 'localhost' // Listen on localhost only
 
 // Middleware
 app.use(cors({
-  origin: "*", // Allow all origins for multi-device access
+  origin: ["http://localhost:3001", "http://127.0.0.1:3001"], // Allow only localhost
   credentials: true
 }))
 app.use(express.json())
@@ -302,15 +302,11 @@ app.get('*', (req, res) => {
 })
 
 server.listen(PORT, HOST, () => {
-  console.log(`🚀 Server running on ${HOST}:${PORT}`)
-  console.log(`📡 API available at http://${HOST}:${PORT}/api`)
+  console.log(`🚀 Server running on localhost:${PORT}`)
+  console.log(`📡 API available at http://localhost:${PORT}/api`)
   console.log(`🔌 WebSocket server ready for real-time updates`)
-  console.log(`🌐 Access from other devices:`)
-  console.log(`   - Local: http://localhost:${PORT}`)
-  console.log(`   - Network: http://192.168.1.4:${PORT}`)
-  console.log(`   - Any device on same network can use the Network URL above`)
-  console.log(`\n💡 If other devices can't connect:`)
-  console.log(`   1. Make sure all devices are on the same WiFi network`)
-  console.log(`   2. Check Windows Firewall - allow Node.js through firewall`)
-  console.log(`   3. Try accessing http://192.168.1.4:${PORT} from another device`)
+  console.log(`🌐 Access the app at: http://localhost:${PORT}`)
+  console.log(`\n✅ Localhost configuration active`)
+  console.log(`   - App accessible only on this computer`)
+  console.log(`   - No network access required`)
 })
