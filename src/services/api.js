@@ -22,6 +22,8 @@ const API_BASE_URL = getApiBaseUrl()
 // Debug logging
 console.log('🌐 API Base URL:', API_BASE_URL)
 console.log('📍 Current location:', window.location.href)
+console.log('🔍 Hostname:', window.location.hostname)
+console.log('🔍 Protocol:', window.location.protocol)
 
 // Generate a simple user ID based on device/browser
 const getUserId = () => {

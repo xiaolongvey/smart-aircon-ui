@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Aircon - Network Access</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .status { 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            text-align: center;
+            font-weight: bold;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); border: 2px solid #4CAF50; }
+        .error { background: rgba(244, 67, 54, 0.3); border: 2px solid #f44336; }
+        .info { background: rgba(33, 150, 243, 0.3); border: 2px solid #2196F3; }
+        .urls { 
+            background: rgba(255,255,255,0.1); 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0;
+        }
+        .url-item { 
+            margin: 10px 0; 
+            padding: 10px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 5px;
+        }
+        button { 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        button:hover { background: #45a049; }
+        .test-results { margin-top: 20px; }
+        .test-item { 
+            padding: 10px; 
+            margin: 5px 0; 
+            border-radius: 5px; 
+            background: rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Smart Aircon - Network Access</h1>
+        
+        <div class="status info">
+            <strong>Current Location:</strong> <span id="currentLocation"></span>
+        </div>
+        
+        <div class="urls">
+            <h3>📱 Access URLs:</h3>
+            <div class="url-item">
+                <strong>Main Device:</strong> <a href="http://localhost:3001" style="color: #4CAF50;">http://localhost:3001</a>
+            </div>
+            <div class="url-item">
+                <strong>Other Devices:</strong> <a href="http://192.168.1.4:3001" style="color: #4CAF50;">http://192.168.1.4:3001</a>
+            </div>
+            <div class="url-item">
+                <strong>Network Test:</strong> <a href="http://192.168.1.4:3001/network-test.html" style="color: #4CAF50;">http://192.168.1.4:3001/network-test.html</a>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="testConnection()">🧪 Test Connection</button>
+            <button onclick="openApp()">🚀 Open Smart Aircon App</button>
+        </div>
+        
+        <div id="testResults" class="test-results"></div>
+        
+        <div class="status info">
+            <strong>💡 Instructions:</strong><br>
+            1. Use the "Other Devices" URL above on different devices<br>
+            2. All devices must be on the same WiFi network<br>
+            3. If connection fails, check Windows Firewall settings<br>
+            4. Make sure the server is running on the main device
+        </div>
+    </div>
+
+    <script>
+        // Display current location
+        document.getElementById('currentLocation').textContent = window.location.href;
+        
+        function addTestResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-item ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            document.getElementById('testResults').appendChild(div);
+        }
+        
+        async function testConnection() {
+            addTestResult('Testing API connection...', 'info');
+            
+            try {
+                const response = await fetch('http://192.168.1.4:3001/api/schedules', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: AbortSignal.timeout(5000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult(`✅ Connection Successful! Found ${data.data?.length || 0} schedules.`, 'success');
+                } else {
+                    addTestResult(`❌ Server Error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addTestResult(`❌ Connection Failed: ${error.message}`, 'error');
+                addTestResult('💡 Make sure the server is running on the main device', 'info');
+            }
+        }
+        
+        function openApp() {
+            window.open('http://192.168.1.4:3001', '_blank');
+        }
+    </script>
+</body>
+</html>
