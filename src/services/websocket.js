@@ -14,7 +14,24 @@ class WebSocketService {
       return this.socket
     }
 
-    const serverUrl = process.env.REACT_APP_WS_URL || 'http://localhost:3001'
+    const getServerUrl = () => {
+      if (process.env.REACT_APP_WS_URL) {
+        return process.env.REACT_APP_WS_URL
+      }
+      
+      // Auto-detect server URL based on current location
+      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
+      const hostname = window.location.hostname
+      
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `${protocol}//${hostname}:3001`
+      }
+      
+      // For other devices, use the same hostname with port 3001
+      return `${protocol}//${hostname}:3001`
+    }
+    
+    const serverUrl = getServerUrl()
     
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],

@@ -18,9 +18,13 @@ const io = new Server(server, {
 })
 
 const PORT = process.env.PORT || 3001
+const HOST = process.env.HOST || '0.0.0.0' // Listen on all network interfaces
 
 // Middleware
-app.use(cors())
+app.use(cors({
+  origin: "*", // Allow all origins for multi-device access
+  credentials: true
+}))
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'dist')))
 
@@ -43,6 +47,7 @@ let schedules = [
 // Active users tracking
 let activeUsers = new Map()
 let userSessions = new Map()
+let uniqueUserNames = new Set() // Track unique user names
 
 // Helper functions
 const generateUserId = () => {
@@ -94,6 +99,24 @@ const broadcastUpdate = (event, data) => {
   io.emit(event, data)
 }
 
+const getUniqueUserCount = () => {
+  return uniqueUserNames.size
+}
+
+const getActiveUsersForToday = () => {
+  const today = new Date().toISOString().split('T')[0]
+  const todaySchedules = schedules.filter(schedule => schedule.scheduleDate === today)
+  const uniqueUsersToday = new Set()
+  
+  todaySchedules.forEach(schedule => {
+    if (schedule.userName && schedule.userName.trim() !== '' && schedule.userName !== 'Anonymous') {
+      uniqueUsersToday.add(schedule.userName.trim())
+    }
+  })
+  
+  return uniqueUsersToday.size
+}
+
 // API Routes
 app.get('/api/schedules', (req, res) => {
   try {
@@ -138,11 +161,16 @@ app.post('/api/schedules', (req, res) => {
     // Add schedule
     schedules.push(newSchedule)
     
+    // Track unique user name if provided
+    if (userName && userName.trim() !== '' && userName !== 'Anonymous') {
+      uniqueUserNames.add(userName.trim())
+    }
+    
     // Broadcast update to all connected clients
     broadcastUpdate('schedule_created', {
       schedule: newSchedule,
       totalSchedules: schedules.length,
-      activeUsers: activeUsers.size
+      activeUsers: getActiveUsersForToday()
     })
     
     res.json({ 
@@ -188,7 +216,7 @@ app.delete('/api/schedules/:id', (req, res) => {
     broadcastUpdate('schedule_deleted', {
       schedule: deletedSchedule,
       totalSchedules: schedules.length,
-      activeUsers: activeUsers.size
+      activeUsers: getActiveUsersForToday()
     })
     
     res.json({ 
@@ -211,28 +239,40 @@ io.on('connection', (socket) => {
   activeUsers.set(socket.id, {
     id: userId,
     socketId: socket.id,
-    connectedAt: new Date().toISOString()
+    connectedAt: new Date().toISOString(),
+    userName: null // Will be set when user provides a name
   })
   
   // Send current schedules to new user
   socket.emit('schedules_updated', {
     schedules: schedules,
     totalSchedules: schedules.length,
-    activeUsers: activeUsers.size
+    activeUsers: getActiveUsersForToday()
   })
   
   // Handle user name updates
   socket.on('update_user_name', (data) => {
     const user = activeUsers.get(socket.id)
     if (user) {
+      // Remove old name from unique set if it exists
+      if (user.userName && user.userName !== 'Anonymous') {
+        uniqueUserNames.delete(user.userName)
+      }
+      
+      // Update user name
       user.userName = data.userName
       activeUsers.set(socket.id, user)
+      
+      // Add new name to unique set (only if not empty/Anonymous)
+      if (data.userName && data.userName.trim() !== '' && data.userName !== 'Anonymous') {
+        uniqueUserNames.add(data.userName.trim())
+      }
       
       // Broadcast user update
       broadcastUpdate('user_updated', {
         userId: user.id,
         userName: data.userName,
-        activeUsers: activeUsers.size
+        activeUsers: getActiveUsersForToday()
       })
     }
   })
@@ -240,11 +280,18 @@ io.on('connection', (socket) => {
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`)
+    const user = activeUsers.get(socket.id)
+    
+    // Remove user name from unique set if it exists
+    if (user && user.userName && user.userName !== 'Anonymous') {
+      uniqueUserNames.delete(user.userName)
+    }
+    
     activeUsers.delete(socket.id)
     
     // Broadcast user count update
     broadcastUpdate('user_disconnected', {
-      activeUsers: activeUsers.size
+      activeUsers: getActiveUsersForToday()
     })
   })
 })
@@ -254,8 +301,9 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'))
 })
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-  console.log(`API available at http://localhost:${PORT}/api`)
+server.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`)
+  console.log(`API available at http://${HOST}:${PORT}/api`)
   console.log(`WebSocket server ready for real-time updates`)
+  console.log(`Access from other devices: http://[YOUR_IP]:${PORT}`)
 })

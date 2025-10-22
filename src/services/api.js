@@ -1,5 +1,25 @@
 // API service for shared schedules
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api'
+const getApiBaseUrl = () => {
+  // Try to detect the server URL automatically
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL
+  }
+  
+  // For development, try to connect to the same host as the frontend
+  const protocol = window.location.protocol
+  const hostname = window.location.hostname
+  const port = window.location.port || '3001'
+  
+  // If running on same host, use the same port
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return `${protocol}//${hostname}:3001/api`
+  }
+  
+  // For other devices, try common server ports
+  return `${protocol}//${hostname}:3001/api`
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 // Generate a simple user ID based on device/browser
 const getUserId = () => {
@@ -42,13 +62,14 @@ export const scheduleAPI = {
   // Get all schedules
   async getAllSchedules() {
     try {
+      console.log(`Attempting to connect to: ${API_BASE_URL}`)
       const response = await fetch(`${API_BASE_URL}/schedules`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
         // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(10000) // Increased timeout for network issues
       })
       
       if (!response.ok) {
@@ -56,11 +77,18 @@ export const scheduleAPI = {
       }
       
       const data = await response.json()
+      console.log('Successfully connected to server')
       return data
     } catch (error) {
       console.error('Failed to fetch schedules:', error)
-      // Return empty array instead of error to prevent UI breaking
-      return { success: true, data: [] }
+      console.error('Server URL attempted:', API_BASE_URL)
+      
+      // Return error with more specific message
+      return { 
+        success: false, 
+        error: 'Unable to connect to server. Please check if the backend is running.',
+        data: [] 
+      }
     }
   },
 

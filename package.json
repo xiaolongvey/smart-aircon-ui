@@ -11,7 +11,9 @@
     "server": "node server.js",
     "start": "npm run build && npm run server",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
-    "dev:backend": "node server.js"
+    "dev:backend": "node server.js",
+    "start:network": "npm run build && node server.js",
+    "server:network": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
