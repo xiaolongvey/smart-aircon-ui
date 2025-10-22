@@ -1,7 +1,9 @@
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { PowerProvider } from './contexts/PowerContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import { ScheduleProvider } from './contexts/ScheduleContext'
+import audioService from './services/audioService'
 import NavBar from './components/NavBar'
 import Home from './pages/Home'
 import Schedule from './pages/Schedule'
@@ -10,6 +12,14 @@ import Settings from './pages/Settings'
 import About from './pages/About'
 
 function App() {
+  // Play startup ping sound when app loads
+  React.useEffect(() => {
+    // Small delay to ensure audio context is ready
+    setTimeout(() => {
+      audioService.playStartupPing()
+    }, 500)
+  }, [])
+
   return (
     <SettingsProvider>
       <PowerProvider>

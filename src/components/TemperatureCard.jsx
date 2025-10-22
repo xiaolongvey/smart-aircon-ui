@@ -5,7 +5,7 @@ import { useSettings } from '../contexts/SettingsContext'
 const TemperatureCard = ({ temperature = 22, isOn = true, mode = 'cool' }) => {
   const [currentTemp, setCurrentTemp] = useState(temperature)
   const { powerOn, togglePower } = usePower()
-  const { settings, formatTemperature } = useSettings()
+  const { settings, formatTemperature, audioService } = useSettings()
   const [currentMode, setCurrentMode] = useState(mode)
 
   const modes = [
@@ -84,7 +84,15 @@ const TemperatureCard = ({ temperature = 22, isOn = true, mode = 'cool' }) => {
         {/* Right Side Controls */}
         <div className="flex-1 flex flex-col items-center justify-center">
           <button
-            onClick={togglePower}
+            onClick={() => {
+              togglePower()
+              // Play power sound
+              if (powerOn) {
+                audioService.playPowerOffSound()
+              } else {
+                audioService.playPowerOnSound()
+              }
+            }}
             className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-300 ${
               powerOn 
                 ? 'bg-teal-400 hover:bg-teal-500 shadow-xl ring-4 ring-teal-200' 

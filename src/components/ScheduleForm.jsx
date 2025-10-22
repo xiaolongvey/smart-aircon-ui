@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePower } from '../contexts/PowerContext'
 import { useSchedule } from '../contexts/ScheduleContext'
+import { useSettings } from '../contexts/SettingsContext'
 
 const ScheduleForm = () => {
   const { powerOn } = usePower()
   const { createSchedule, userInfo, updateUserName } = useSchedule()
+  const { audioService } = useSettings()
   const [formData, setFormData] = useState({
     userName: userInfo.userName,
     startTime: '',
@@ -66,6 +68,8 @@ const ScheduleForm = () => {
     try {
       const result = await createSchedule(formData)
       if (result.success) {
+        // Play success sound
+        audioService.playSuccessSound()
         setSaveStatus({ type: 'success', message: result.message || 'Schedule created successfully!' })
         // Reset form
         setFormData(prev => ({
@@ -81,12 +85,16 @@ const ScheduleForm = () => {
       } else {
         // Handle conflict detection
         if (result.conflicts && result.conflicts.length > 0) {
+          // Play error sound
+          audioService.playErrorSound()
           const conflict = result.conflicts[0]
           setSaveStatus({ 
             type: 'error', 
             message: `Time slot conflicts with existing schedule by ${conflict.userName} (${conflict.startTime}-${conflict.endTime}). Please choose a different time.`
           })
         } else {
+          // Play error sound
+          audioService.playErrorSound()
           setSaveStatus({ type: 'error', message: result.error || 'Failed to create schedule' })
         }
       }
@@ -241,6 +249,7 @@ const ScheduleForm = () => {
           <button
             type="submit"
             disabled={!powerOn || loading}
+            onClick={() => audioService.playClickSound()}
             className={`w-full font-medium px-6 py-3 rounded-lg transition-colors duration-200 ${
               powerOn && !loading
                 ? 'bg-teal-600 hover:bg-teal-700 text-white cursor-pointer' 

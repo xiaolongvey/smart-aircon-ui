@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import audioService from '../services/audioService'
+import languageService from '../services/languageService'
 
 const SettingsContext = createContext()
 
@@ -53,11 +55,31 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [settings.darkMode])
 
+  // Initialize audio service
+  useEffect(() => {
+    audioService.setEnabled(settings.soundEffects)
+    audioService.setVolume(0.5)
+  }, [settings.soundEffects])
+
+  // Initialize language service
+  useEffect(() => {
+    languageService.setLanguage(settings.language)
+  }, [settings.language])
+
   const updateSetting = (key, value) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
     }))
+    
+    // Handle specific setting updates
+    if (key === 'soundEffects') {
+      audioService.setEnabled(value)
+    }
+    
+    if (key === 'language') {
+      languageService.setLanguage(value)
+    }
   }
 
   const resetSettings = () => {
@@ -106,7 +128,9 @@ export const SettingsProvider = ({ children }) => {
     convertTemperature,
     formatTemperature,
     celsiusToFahrenheit,
-    fahrenheitToCelsius
+    fahrenheitToCelsius,
+    audioService,
+    languageService
   }
 
   return (
