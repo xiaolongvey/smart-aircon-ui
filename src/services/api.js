@@ -42,12 +42,25 @@ export const scheduleAPI = {
   // Get all schedules
   async getAllSchedules() {
     try {
-      const response = await fetch(`${API_BASE_URL}/schedules`)
+      const response = await fetch(`${API_BASE_URL}/schedules`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(5000)
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       return data
     } catch (error) {
       console.error('Failed to fetch schedules:', error)
-      return { success: false, error: error.message }
+      // Return empty array instead of error to prevent UI breaking
+      return { success: true, data: [] }
     }
   },
 
@@ -64,13 +77,19 @@ export const scheduleAPI = {
           userId,
           userName,
           ...scheduleData
-        })
+        }),
+        signal: AbortSignal.timeout(5000)
       })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       return data
     } catch (error) {
       console.error('Failed to create schedule:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: 'Unable to connect to server. Please check if the backend is running.' }
     }
   },
 

@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "server": "node server.js",
     "start": "npm run build && npm run server",
-    "dev:full": "concurrently \"npm run dev\" \"npm run server\""
+    "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
+    "dev:backend": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
