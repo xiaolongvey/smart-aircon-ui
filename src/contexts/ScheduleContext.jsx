@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { scheduleAPI, realtimeAPI } from '../services/api'
+import { scheduleAPI } from '../services/api'
+import websocketService from '../services/websocket'
 
 const ScheduleContext = createContext()
 
@@ -16,17 +17,52 @@ export const ScheduleProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [userInfo, setUserInfo] = useState(scheduleAPI.getUserInfo())
+  const [activeUsers, setActiveUsers] = useState(0)
+  const [connectionStatus, setConnectionStatus] = useState({ isConnected: false })
 
   // Load schedules on mount
   useEffect(() => {
     loadSchedules()
     
-    // Subscribe to real-time updates
-    const unsubscribe = realtimeAPI.subscribeToUpdates((updatedSchedules) => {
-      setSchedules(updatedSchedules)
+    // Connect to WebSocket
+    const socket = websocketService.connect()
+    
+    // Set up real-time event listeners
+    websocketService.onSchedulesUpdated((data) => {
+      setSchedules(data.schedules)
+      setActiveUsers(data.activeUsers)
     })
     
-    return unsubscribe
+    websocketService.onScheduleCreated((data) => {
+      setSchedules(prev => [data.schedule, ...prev])
+      setActiveUsers(data.activeUsers)
+    })
+    
+    websocketService.onScheduleDeleted((data) => {
+      setSchedules(prev => prev.filter(s => s.id !== data.schedule.id))
+      setActiveUsers(data.activeUsers)
+    })
+    
+    websocketService.onUserUpdated((data) => {
+      setActiveUsers(data.activeUsers)
+    })
+    
+    websocketService.onUserDisconnected((data) => {
+      setActiveUsers(data.activeUsers)
+    })
+    
+    // Update connection status
+    const updateConnectionStatus = () => {
+      setConnectionStatus(websocketService.getConnectionStatus())
+    }
+    
+    updateConnectionStatus()
+    const statusInterval = setInterval(updateConnectionStatus, 5000)
+    
+    return () => {
+      clearInterval(statusInterval)
+      websocketService.removeAllListeners()
+    }
   }, [])
 
   const loadSchedules = async () => {
@@ -120,6 +156,8 @@ export const ScheduleProvider = ({ children }) => {
   const updateUserName = (name) => {
     scheduleAPI.setUserName(name)
     setUserInfo(prev => ({ ...prev, userName: name }))
+    // Notify server of user name update
+    websocketService.updateUserName(name)
   }
 
   // Get schedules by user
@@ -141,6 +179,8 @@ export const ScheduleProvider = ({ children }) => {
     loading,
     error,
     userInfo,
+    activeUsers,
+    connectionStatus,
     createSchedule,
     updateSchedule,
     deleteSchedule,

@@ -8,7 +8,7 @@ import TemperatureCard from '../components/TemperatureCard'
 const Home = () => {
   const { powerOn } = usePower()
   const { settings } = useSettings()
-  const { schedules, deleteSchedule, loading, error } = useSchedule()
+  const { schedules, deleteSchedule, loading, error, activeUsers, connectionStatus } = useSchedule()
   const [phNow, setPhNow] = useState(new Date())
 
   const handleDeleteSchedule = async (id) => {
@@ -77,13 +77,18 @@ const Home = () => {
         <div className="col-span-12 lg:col-span-5 row-span-6 flex flex-col gap-0">
           <div className="card p-3">
             <div className="grid grid-cols-2 gap-0 items-center">
-              <div className="p-2 text-center rounded-lg bg-emerald-50 h-16 flex flex-col justify-center leading-tight">
-                <div className="text-emerald-600 text-xs">Energy Saving</div>
-                <div className="text-slate-800 text-base font-semibold mt-0">+15%</div>
+              <div className="p-2 text-center rounded-lg bg-emerald-50 dark:bg-emerald-900 h-16 flex flex-col justify-center leading-tight">
+                <div className="text-emerald-600 dark:text-emerald-300 text-xs">Energy Saving</div>
+                <div className="text-slate-800 dark:text-white text-base font-semibold mt-0">+15%</div>
               </div>
-              <div className="p-2 text-center rounded-lg bg-violet-50 h-16 flex flex-col justify-center leading-tight">
-                <div className="text-violet-600 text-xs">System Status</div>
-                <div className="text-slate-800 text-base font-semibold mt-0">Operational</div>
+              <div className="p-2 text-center rounded-lg bg-violet-50 dark:bg-violet-900 h-16 flex flex-col justify-center leading-tight">
+                <div className="text-violet-600 dark:text-violet-300 text-xs">Active Users</div>
+                <div className="text-slate-800 dark:text-white text-base font-semibold mt-0 flex items-center justify-center">
+                  <div className={`w-2 h-2 rounded-full mr-1 ${
+                    connectionStatus.isConnected ? 'bg-green-500' : 'bg-red-500'
+                  }`}></div>
+                  {activeUsers}
+                </div>
               </div>
             </div>
           </div>

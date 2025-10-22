@@ -66,7 +66,7 @@ const ScheduleForm = () => {
     try {
       const result = await createSchedule(formData)
       if (result.success) {
-        setSaveStatus({ type: 'success', message: 'Schedule created successfully!' })
+        setSaveStatus({ type: 'success', message: result.message || 'Schedule created successfully!' })
         // Reset form
         setFormData(prev => ({
           ...prev,
@@ -79,7 +79,16 @@ const ScheduleForm = () => {
         // Navigate to home after a short delay
         setTimeout(() => navigate('/'), 1500)
       } else {
-        setSaveStatus({ type: 'error', message: result.error || 'Failed to create schedule' })
+        // Handle conflict detection
+        if (result.conflicts && result.conflicts.length > 0) {
+          const conflict = result.conflicts[0]
+          setSaveStatus({ 
+            type: 'error', 
+            message: `Time slot conflicts with existing schedule by ${conflict.userName} (${conflict.startTime}-${conflict.endTime}). Please choose a different time.`
+          })
+        } else {
+          setSaveStatus({ type: 'error', message: result.error || 'Failed to create schedule' })
+        }
       }
     } catch (err) {
       console.error('Failed to create schedule', err)
