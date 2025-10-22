@@ -7,9 +7,6 @@
     font-family: 'Archivo', system-ui, sans-serif;
     background: linear-gradient(135deg, #ecfeff 0%, #ccfbf1 100%);
     min-height: 100vh;
-    /* Force landscape orientation */
-    transform: rotate(0deg);
-    overflow-x: hidden;
   }
   
   .dark body {
@@ -25,21 +22,6 @@
   /* Ensure headings are bright in dark mode */
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
     color: #ffffff;
-  }
-
-  /* Force landscape mode on mobile devices */
-  @media screen and (max-width: 768px) {
-    body {
-      transform: rotate(90deg);
-      transform-origin: center;
-      width: 100vh;
-      height: 100vw;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      margin-left: -50vh;
-      margin-top: -50vw;
-    }
   }
 }
 
