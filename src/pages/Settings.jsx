@@ -157,10 +157,10 @@ const Settings = () => {
               <h3 className="font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">App Version</h3>
               <p className="text-aircon-gray-600 dark:text-gray-300">App V1.1.0</p>
             </div>
-            <div>
-              <h3 className="font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">Last Updated</h3>
-              <p className="text-aircon-gray-600 dark:text-gray-300">January 15, 2024</p>
-            </div>
+                        <div>
+                          <h3 className="font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">Built on</h3>
+                          <p className="text-aircon-gray-600 dark:text-gray-300">October 6, 2025</p>
+                        </div>
             <div>
               <h3 className="font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">Device ID</h3>
               <p className="text-aircon-gray-600 dark:text-gray-300 font-mono text-sm">Room 402.2025</p>
@@ -183,10 +183,10 @@ const Settings = () => {
                 <h3 className="font-medium text-slate-700 dark:text-gray-200 mb-2">App Version</h3>
                 <p className="text-slate-600 dark:text-gray-300">App V1.1.0</p>
               </div>
-              <div>
-                <h3 className="font-medium text-slate-700 dark:text-gray-200 mb-2">Last Updated</h3>
-                <p className="text-slate-600 dark:text-gray-300">January 15, 2024</p>
-              </div>
+                          <div>
+                            <h3 className="font-medium text-slate-700 dark:text-gray-200 mb-2">Built on</h3>
+                            <p className="text-slate-600 dark:text-gray-300">October 6, 2025</p>
+                          </div>
               <div>
                 <h3 className="font-medium text-slate-700 dark:text-gray-200 mb-2">Device ID</h3>
                 <p className="text-slate-600 dark:text-gray-300 font-mono text-sm">Room 402.2025</p>
