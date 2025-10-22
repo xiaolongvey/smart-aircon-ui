@@ -93,40 +93,29 @@ const Home = () => {
             </div>
           </div>
 
-          {/* All Schedules Grid */}
+          {/* Today's Schedule Dashboard */}
           <div className="card p-4 dark:bg-black dark:border-gray-800">
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-white mb-3 tracking-widest">Shared Schedules</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-white tracking-widest">TODAY'S SCHEDULE</h2>
+              <div className="flex items-center text-sm text-slate-600 dark:text-gray-300">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                Live Updates
+              </div>
+            </div>
+            
             {loading ? (
-              <div className="text-slate-500 dark:text-gray-300 text-sm">Loading schedules...</div>
+              <div className="text-slate-500 dark:text-gray-300 text-sm text-center py-4">Loading schedules...</div>
             ) : error ? (
-              <div className="text-red-500 text-sm">Error: {error}</div>
+              <div className="text-red-500 text-sm text-center py-4">Error: {error}</div>
             ) : schedules?.length === 0 ? (
-              <div className="text-slate-500 dark:text-gray-300 text-sm">No schedules yet. Create one to get started!</div>
+              <div className="text-center py-8">
+                <div className="text-slate-500 dark:text-gray-300 text-sm mb-2">No schedules for today</div>
+                <div className="text-xs text-slate-400 dark:text-gray-400">Create a schedule to get started!</div>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {schedules.map(s => {
-                  // Format date for display
-                  const formatDate = (dateString) => {
-                    if (!dateString) return 'Today'
-                    const date = new Date(dateString)
-                    const today = new Date()
-                    const tomorrow = new Date()
-                    tomorrow.setDate(today.getDate() + 1)
-                    
-                    if (date.toDateString() === today.toDateString()) {
-                      return 'Today'
-                    } else if (date.toDateString() === tomorrow.toDateString()) {
-                      return 'Tomorrow'
-                    } else {
-                      return date.toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })
-                    }
-                  }
-                  
-                  // Convert 24-hour time to 12-hour format with AM/PM and today/tomorrow logic
+              <div className="space-y-3">
+                {(() => {
+                  // Helper functions
                   const formatTime = (time24) => {
                     const [hours, minutes] = time24.split(':').map(Number)
                     const period = hours >= 12 ? 'PM' : 'AM'
@@ -134,106 +123,189 @@ const Home = () => {
                     return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
                   }
                   
-                  // Determine if schedule is for today or tomorrow based on common sense
-                  const getScheduleContext = (schedule) => {
-                    const now = new Date()
-                    const currentHour = now.getHours()
-                    const scheduleHour = parseInt(schedule.startTime.split(':')[0])
-                    
-                    // If schedule date is explicitly set to tomorrow
-                    if (schedule.scheduleDate) {
-                      const scheduleDate = new Date(schedule.scheduleDate)
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      scheduleDate.setHours(0, 0, 0, 0)
-                      
-                      if (scheduleDate.getTime() > today.getTime()) {
-                        return 'Tomorrow'
-                      }
-                    }
-                    
-                    // Common sense logic: if it's late at night and schedule is early morning, it's probably tomorrow
-                    if (currentHour >= 20 && scheduleHour <= 6) {
-                      return 'Tomorrow'
-                    }
-                    
-                    // If it's early morning and schedule is late night, it's probably today
-                    if (currentHour <= 6 && scheduleHour >= 20) {
-                      return 'Today'
-                    }
-                    
-                    // If schedule hour is much earlier than current hour, it's probably tomorrow
-                    if (scheduleHour < currentHour - 2) {
-                      return 'Tomorrow'
-                    }
-                    
-                    // Default to today
-                    return 'Today'
+                  const isToday = (schedule) => {
+                    if (!schedule.scheduleDate) return true
+                    const scheduleDate = new Date(schedule.scheduleDate)
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    scheduleDate.setHours(0, 0, 0, 0)
+                    return scheduleDate.getTime() === today.getTime()
                   }
                   
-                  return (
-                    <div key={s.id} className="p-3 rounded-lg bg-teal-50 dark:bg-gray-900 relative">
-                      <div className="text-teal-600 dark:text-teal-300 text-xs uppercase tracking-widest">Schedule</div>
-                      <div className="text-slate-800 dark:text-white text-lg font-semibold mt-1">
-                        {formatTime(s.startTime)} - {formatTime(s.endTime)}
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
-                          getScheduleContext(s) === 'Tomorrow' 
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' 
-                            : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-                        }`}>
-                          {getScheduleContext(s)}
-                        </span>
+                  const isCurrentlyActive = (schedule) => {
+                    const now = new Date()
+                    const currentTime = now.getHours() * 60 + now.getMinutes()
+                    const startTime = schedule.startTime.split(':').map(Number)
+                    const endTime = schedule.endTime.split(':').map(Number)
+                    const startMinutes = startTime[0] * 60 + startTime[1]
+                    const endMinutes = endTime[0] * 60 + endTime[1]
+                    
+                    return currentTime >= startMinutes && currentTime < endMinutes
+                  }
+                  
+                  const isUpcoming = (schedule) => {
+                    const now = new Date()
+                    const currentTime = now.getHours() * 60 + now.getMinutes()
+                    const startTime = schedule.startTime.split(':').map(Number)
+                    const startMinutes = startTime[0] * 60 + startTime[1]
+                    
+                    return currentTime < startMinutes
+                  }
+                  
+                  // Filter and sort today's schedules
+                  const todaySchedules = schedules
+                    .filter(isToday)
+                    .sort((a, b) => {
+                      const timeA = a.startTime.split(':').map(Number)
+                      const timeB = b.startTime.split(':').map(Number)
+                      return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1])
+                    })
+                  
+                  if (todaySchedules.length === 0) {
+                    return (
+                      <div className="text-center py-8">
+                        <div className="text-slate-500 dark:text-gray-300 text-sm mb-2">No schedules for today</div>
+                        <div className="text-xs text-slate-400 dark:text-gray-400">Create a schedule to get started!</div>
                       </div>
-                      
-                      {/* Date Display */}
-                      <div className="text-slate-600 dark:text-gray-300 text-xs mt-1 flex items-center">
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        {formatDate(s.scheduleDate)}
+                    )
+                  }
+                  
+                  return todaySchedules.map(schedule => {
+                    const isActive = isCurrentlyActive(schedule)
+                    const isUpcomingSchedule = isUpcoming(schedule)
+                    
+                    return (
+                      <div key={schedule.id} className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-green-50 dark:bg-green-900 border-green-300 dark:border-green-600 shadow-lg' 
+                          : isUpcomingSchedule
+                          ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full mr-3 ${
+                              isActive 
+                                ? 'bg-green-500 animate-pulse' 
+                                : isUpcomingSchedule
+                                ? 'bg-blue-500'
+                                : 'bg-gray-400'
+                            }`}></div>
+                            <div className="text-sm font-medium text-slate-600 dark:text-gray-300 uppercase tracking-wider">
+                              {isActive ? 'ACTIVE NOW' : isUpcomingSchedule ? 'UPCOMING' : 'COMPLETED'}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteSchedule(schedule.id)}
+                            disabled={!powerOn}
+                            className={`p-1 rounded ${
+                              powerOn 
+                                ? 'text-red-500 hover:text-red-700 hover:bg-red-50' 
+                                : 'text-gray-400 cursor-not-allowed'
+                            }`}
+                            aria-label="Delete schedule"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        <div className="text-2xl font-bold text-slate-800 dark:text-white mb-2">
+                          {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center text-slate-600 dark:text-gray-300">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            {schedule.comfortLevel}°C
+                          </div>
+                          {schedule.userName && (
+                            <div className="text-slate-500 dark:text-gray-400">
+                              by {schedule.userName}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      
-                      {/* User Name */}
-                      {s.userName && (
-                        <div className="text-slate-600 dark:text-gray-300 text-xs mt-1 flex items-center">
-                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          by {s.userName}
-                        </div>
-                      )}
-                      
-                      {/* Comfort Level */}
-                      {s.comfortLevel && (
-                        <div className="text-teal-700 dark:text-teal-300 text-sm font-medium mt-2 flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                          </svg>
-                          {s.comfortLevel}°C Comfort Level
-                        </div>
-                      )}
-                      
-                      <button
-                        onClick={() => handleDeleteSchedule(s.id)}
-                        disabled={!powerOn}
-                        className={`absolute bottom-2 right-2 ${
-                          powerOn 
-                            ? 'text-red-600 hover:text-red-700' 
-                            : 'text-gray-400 cursor-not-allowed'
-                        }`}
-                        aria-label="Delete schedule"
-                        title="Delete"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  )
-                })}
+                    )
+                  })
+                })()}
               </div>
             )}
           </div>
+
+          {/* Tomorrow's Schedules (if any) */}
+          {schedules && schedules.filter(s => {
+            if (!s.scheduleDate) return false
+            const scheduleDate = new Date(s.scheduleDate)
+            const tomorrow = new Date()
+            tomorrow.setDate(tomorrow.getDate() + 1)
+            tomorrow.setHours(0, 0, 0, 0)
+            scheduleDate.setHours(0, 0, 0, 0)
+            return scheduleDate.getTime() === tomorrow.getTime()
+          }).length > 0 && (
+            <div className="card p-4 dark:bg-black dark:border-gray-800">
+              <h3 className="text-md font-semibold text-slate-800 dark:text-white mb-3 tracking-widest">TOMORROW'S SCHEDULES</h3>
+              <div className="space-y-2">
+                {schedules
+                  .filter(s => {
+                    if (!s.scheduleDate) return false
+                    const scheduleDate = new Date(s.scheduleDate)
+                    const tomorrow = new Date()
+                    tomorrow.setDate(tomorrow.getDate() + 1)
+                    tomorrow.setHours(0, 0, 0, 0)
+                    scheduleDate.setHours(0, 0, 0, 0)
+                    return scheduleDate.getTime() === tomorrow.getTime()
+                  })
+                  .sort((a, b) => {
+                    const timeA = a.startTime.split(':').map(Number)
+                    const timeB = b.startTime.split(':').map(Number)
+                    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1])
+                  })
+                  .map(schedule => {
+                    const formatTime = (time24) => {
+                      const [hours, minutes] = time24.split(':').map(Number)
+                      const period = hours >= 12 ? 'PM' : 'AM'
+                      const hours12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                      return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`
+                    }
+                    
+                    return (
+                      <div key={schedule.id} className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-lg font-semibold text-slate-800 dark:text-white">
+                              {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                            </div>
+                            <div className="text-sm text-slate-600 dark:text-gray-300">
+                              {schedule.comfortLevel}°C {schedule.userName && `• by ${schedule.userName}`}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteSchedule(schedule.id)}
+                            disabled={!powerOn}
+                            className={`p-1 rounded ${
+                              powerOn 
+                                ? 'text-red-500 hover:text-red-700 hover:bg-red-50' 
+                                : 'text-gray-400 cursor-not-allowed'
+                            }`}
+                            aria-label="Delete schedule"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+          )}
 
           <div className="card p-4 mt-0">
             <h2 className="text-lg font-semibold text-slate-800 mb-3 tracking-widest text-center">QUICK ACTIONS</h2>
