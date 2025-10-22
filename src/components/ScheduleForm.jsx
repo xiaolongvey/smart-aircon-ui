@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePower } from '../contexts/PowerContext'
 import { useSchedule } from '../contexts/ScheduleContext'
@@ -9,7 +9,7 @@ const ScheduleForm = () => {
   const { createSchedule, userInfo, updateUserName } = useSchedule()
   const { audioService } = useSettings()
   const [formData, setFormData] = useState({
-    userName: userInfo.userName,
+    userName: '',
     startTime: '',
     endTime: '',
     comfortLevel: 22,
@@ -74,6 +74,7 @@ const ScheduleForm = () => {
         // Reset form
         setFormData(prev => ({
           ...prev,
+          userName: '',
           startTime: '',
           endTime: '',
           comfortLevel: 22,
@@ -189,26 +190,19 @@ const ScheduleForm = () => {
           )}
         </div>
 
-        {/* Time Settings */}
+        {/* Time Settings - Alarm Clock Style */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-3">
               Start Time
             </label>
-            <input
-              type="time"
+            <AlarmClockTimePicker
               value={formData.startTime}
-              onChange={(e) => handleInputChange('startTime', e.target.value)}
+              onChange={(time) => handleInputChange('startTime', time)}
               disabled={!powerOn}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-gray-900 dark:text-white ${
-                powerOn 
-                  ? 'border-gray-300 dark:border-gray-600 focus:ring-teal-500' 
-                  : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              }`}
-              required
             />
             {formData.startTime && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
                 <span>
                   {(() => {
                     const [hours, minutes] = formData.startTime.split(':').map(Number)
@@ -228,23 +222,16 @@ const ScheduleForm = () => {
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-2">
+            <label className="block text-sm font-medium text-aircon-gray-700 dark:text-gray-200 mb-3">
               End Time
             </label>
-            <input
-              type="time"
+            <AlarmClockTimePicker
               value={formData.endTime}
-              onChange={(e) => handleInputChange('endTime', e.target.value)}
+              onChange={(time) => handleInputChange('endTime', time)}
               disabled={!powerOn}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent dark:bg-gray-900 dark:text-white ${
-                powerOn 
-                  ? 'border-gray-300 dark:border-gray-600 focus:ring-teal-500' 
-                  : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-              }`}
-              required
             />
             {formData.endTime && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
                 <span>
                   {(() => {
                     const [hours, minutes] = formData.endTime.split(':').map(Number)
@@ -307,6 +294,158 @@ const ScheduleForm = () => {
           </button>
         </div>
       </form>
+    </div>
+  )
+}
+
+// Alarm Clock Time Picker Component
+const AlarmClockTimePicker = ({ value, onChange, disabled }) => {
+  const [hour12, setHour12] = useState(12)
+  const [minute, setMinute] = useState(0)
+  const [period, setPeriod] = useState('AM')
+
+  // Initialize state when value changes
+  useEffect(() => {
+    if (value) {
+      const [hours, minutes] = value.split(':').map(Number)
+      setHour12(hours === 0 ? 12 : hours > 12 ? hours - 12 : hours)
+      setMinute(minutes)
+      setPeriod(hours >= 12 ? 'PM' : 'AM')
+    }
+  }, [value])
+
+  const updateTime = (newHour12, newMinute, newPeriod) => {
+    let hour24 = newHour12
+    if (newPeriod === 'AM' && newHour12 === 12) {
+      hour24 = 0
+    } else if (newPeriod === 'PM' && newHour12 !== 12) {
+      hour24 = newHour12 + 12
+    }
+    
+    const timeString = `${hour24.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`
+    onChange(timeString)
+  }
+
+  const handleHourChange = (newHour) => {
+    setHour12(newHour)
+    updateTime(newHour, minute, period)
+  }
+
+  const handleMinuteChange = (newMinute) => {
+    setMinute(newMinute)
+    updateTime(hour12, newMinute, period)
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod)
+    updateTime(hour12, minute, newPeriod)
+  }
+
+  // Generate hour options (1-12)
+  const hourOptions = Array.from({ length: 12 }, (_, i) => i + 1)
+  
+  // Generate minute options (0-59, in 5-minute intervals)
+  const minuteOptions = Array.from({ length: 12 }, (_, i) => i * 5)
+
+  return (
+    <div className={`bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border-2 ${
+      disabled 
+        ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900' 
+        : 'border-gray-300 dark:border-gray-600'
+    }`}>
+      <div className="flex items-center justify-center gap-4">
+        {/* Hour Selector */}
+        <div className="flex flex-col items-center">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">HOUR</div>
+          <div className="relative">
+            <select
+              value={hour12}
+              onChange={(e) => handleHourChange(parseInt(e.target.value))}
+              disabled={disabled}
+              className={`appearance-none bg-transparent text-2xl font-bold text-center focus:outline-none ${
+                disabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-gray-800 dark:text-white cursor-pointer'
+              }`}
+              style={{ width: '60px' }}
+            >
+              {hourOptions.map(hour => (
+                <option key={hour} value={hour}>
+                  {hour.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Colon Separator */}
+        <div className="text-3xl font-bold text-gray-400 dark:text-gray-500">:</div>
+
+        {/* Minute Selector */}
+        <div className="flex flex-col items-center">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">MIN</div>
+          <div className="relative">
+            <select
+              value={minute}
+              onChange={(e) => handleMinuteChange(parseInt(e.target.value))}
+              disabled={disabled}
+              className={`appearance-none bg-transparent text-2xl font-bold text-center focus:outline-none ${
+                disabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-gray-800 dark:text-white cursor-pointer'
+              }`}
+              style={{ width: '60px' }}
+            >
+              {minuteOptions.map(min => (
+                <option key={min} value={min}>
+                  {min.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* AM/PM Selector */}
+        <div className="flex flex-col items-center">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">PERIOD</div>
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              onClick={() => handlePeriodChange('AM')}
+              disabled={disabled}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                period === 'AM'
+                  ? 'bg-blue-500 text-white'
+                  : disabled
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              AM
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePeriodChange('PM')}
+              disabled={disabled}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                period === 'PM'
+                  ? 'bg-blue-500 text-white'
+                  : disabled
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              PM
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
